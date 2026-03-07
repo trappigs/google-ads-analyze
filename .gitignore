@@ -36,3 +36,18 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+# Secrets and Configs
+.streamlit/
+secrets.toml
+google-ads.yaml
+*.yaml
+.env
+auth_token.json
+
+# Local Dev
+dashboard_release/
+scripts/
+examples/
+resources/
+tmp/
