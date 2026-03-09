@@ -3,3 +3,4 @@ pandas
 plotly
 google-ads
 openai
+facebook-business
