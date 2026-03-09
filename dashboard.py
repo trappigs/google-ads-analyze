@@ -67,19 +67,38 @@ with st.sidebar:
 # ─── DATA HELPERS ────────────────────────────────────────────────────────────────
 
 def get_client():
-    try:
-        if "google_ads" in st.secrets:
-            # Streamlit Cloud deployment: Use Secrets
+    # 1. Try Streamlit Secrets (Highest Priority)
+    if "google_ads" in st.secrets:
+        try:
+            # Ensure all values are strings for the client library
             credentials = {k: str(v) for k, v in st.secrets["google_ads"].items()}
             return GoogleAdsClient.load_from_dict(credentials, version=API_VERSION)
-    except Exception:
-        pass
-    
-    # Local development fallback
-    return GoogleAdsClient.load_from_storage("google-ads.yaml", version=API_VERSION)
+        except Exception as e:
+            st.error(f"Secrets yüklenirken hata: {e}")
+            pass
+
+    # 2. Local development fallback (google-ads.yaml)
+    import os
+    yaml_path = "google-ads.yaml"
+    if os.path.exists(yaml_path):
+        try:
+            # Sanity check: Don't load if it's just placeholders
+            with open(yaml_path, "r") as f:
+                content = f.read()
+                if "INSERT_" in content:
+                    return None # placeholder detected
+            return GoogleAdsClient.load_from_storage(yaml_path, version=API_VERSION)
+        except Exception:
+            return None
+            
+    return None
 
 def _run(c_id, query):
     client = get_client()
+    if not client:
+        st.error("❌ Google Ads Client başlatılamadı. Lütfen secrets.toml veya google-ads.yaml dosyasını kontrol edin.")
+        st.stop()
+        
     svc = client.get_service("GoogleAdsService")
     rows = []
     for batch in svc.search_stream(customer_id=c_id, query=query):
